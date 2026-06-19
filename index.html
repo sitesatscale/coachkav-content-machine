@@ -269,11 +269,22 @@
       letter-spacing: 0.2em; text-transform: uppercase; color: var(--faint); white-space: nowrap;
     }
     .trust-sep { width: 1px; height: 20px; background: var(--line); flex-shrink: 0; }
-    .trust-logos { display: flex; gap: 40px; flex-wrap: wrap; }
+    .trust-logos { display: flex; align-items: center; gap: 40px; flex-wrap: wrap; }
     .trust-logo {
       font-family: var(--display); font-weight: 700; font-size: 14px;
       letter-spacing: 0.18em; text-transform: uppercase; color: var(--ghost);
     }
+    /* Real brand marks: white SVGs shown ghosted, brightening on hover */
+    .trust-logo img {
+      display: block; width: auto; opacity: 0.5;
+      transition: opacity 0.22s ease;
+    }
+    .trust-logo:hover img, .trust-logo:focus-visible img { opacity: 0.9; }
+    .trust-logo--nike img     { height: 18px; }
+    .trust-logo--espn img     { height: 16px; }
+    .trust-logo--nfl img      { height: 30px; }
+    .trust-logo--olympics img { height: 22px; }
+    .trust-logo--usatoday img { height: 22px; }
 
     /* ════ PROBLEM ════ */
     .problem-section { padding: 100px 0; }
@@ -792,11 +803,11 @@
         <span class="trust-label">Trusted by athletes and executives from</span>
         <div class="trust-sep"></div>
         <div class="trust-logos">
-          <span class="trust-logo">Nike</span>
-          <span class="trust-logo">The Olympics</span>
-          <span class="trust-logo">ESPN</span>
-          <span class="trust-logo">NFL</span>
-          <span class="trust-logo">USA Today</span>
+          <span class="trust-logo trust-logo--nike"><img src="assets/logos/nike.svg" alt="Nike" loading="lazy" /></span>
+          <span class="trust-logo trust-logo--olympics"><img src="assets/logos/olympics.svg" alt="The Olympics" loading="lazy" /></span>
+          <span class="trust-logo trust-logo--espn"><img src="assets/logos/espn.svg" alt="ESPN" loading="lazy" /></span>
+          <span class="trust-logo trust-logo--nfl"><img src="assets/logos/nfl.svg" alt="NFL" loading="lazy" /></span>
+          <span class="trust-logo trust-logo--usatoday"><img src="assets/logos/usatoday.svg" alt="USA Today" loading="lazy" /></span>
         </div>
       </div>
     </div>
