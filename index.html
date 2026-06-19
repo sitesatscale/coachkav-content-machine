@@ -1151,14 +1151,10 @@
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    // ── Lead capture → Google Sheet (via Apps Script web app) ──
-    // The form sends each lead to TWO places (see SETUP-FORM.md):
-    //  1. Google Sheet (backup record) via an Apps Script web app /exec URL.
-    //  2. GoHighLevel via a Workflow "Inbound Webhook" trigger URL.
-    // Either can be left as a placeholder; the form sends to whichever is set.
-    var LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbz6mbwujrtG_euGt9NSzaHp-jFTzt0HiWWu_BOqDj3ouucJ_kJ7BRYiHmDa_Qr-8bAP/exec";
-    var GHL_WEBHOOK   = "https://services.leadconnectorhq.com/hooks/OGb7tWHv1LnxV6XOnOiJ/webhook-trigger/1d5fdb35-ec12-4438-b599-fe020ce35948";
-
+    // ── Lead capture ──
+    // The form posts to our own /api/lead serverless function. That function (not
+    // the browser) holds the real GoHighLevel + Google Sheet URLs in server-side
+    // env vars and filters abuse, so no endpoint is exposed in this page source.
     (function () {
       var form = document.getElementById("leadForm");
       if (!form) return;
@@ -1173,19 +1169,12 @@
       form.addEventListener("submit", function (e) {
         e.preventDefault();
 
-        // Honeypot: silently drop bot submissions.
+        // Honeypot: silently drop bot submissions (server re-checks this too).
         if (form.elements["company_website"] && form.elements["company_website"].value) return;
 
         if (!form.checkValidity()) {
           setStatus("Please fill in your name, a valid email, and your business.", true);
           form.reportValidity();
-          return;
-        }
-
-        var sheetOn = LEAD_ENDPOINT.indexOf("PASTE_YOUR") !== 0;
-        var ghlOn   = GHL_WEBHOOK.indexOf("PASTE_YOUR") !== 0;
-        if (!sheetOn && !ghlOn) {
-          setStatus("Form endpoint not configured yet. (See SETUP-FORM.md)", true);
           return;
         }
 
@@ -1197,39 +1186,31 @@
         var data = {
           name: form.elements["name"].value.trim(),
           email: form.elements["email"].value.trim(),
-          business: form.elements["business"].value.trim(),
-          source: "content-machine-landing",
-          submitted_at: new Date().toISOString()
+          business: form.elements["business"].value.trim()
         };
+        // Cloudflare Turnstile token, if the widget is enabled on the page.
+        var cf = form.querySelector('[name="cf-turnstile-response"]');
+        if (cf) data.cfToken = cf.value;
 
-        // Both endpoints accept form-urlencoded fields (Apps Script reads e.parameter;
-        // GHL's inbound webhook maps each key to a field). url-encoded is a "simple"
-        // request, so no-cors works without a CORS preflight.
-        var payload = new URLSearchParams(data).toString();
-        function send(url) {
-          return fetch(url, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-            body: payload
+        fetch("/api/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error("rejected");
+            // Grant short-lived, session-scoped access to the thank-you page so the
+            // download URL can't be shared or opened directly without submitting.
+            try {
+              sessionStorage.setItem("cm_access", JSON.stringify({ t: Date.now() }));
+            } catch (err) { /* storage blocked — page still loads */ }
+            window.location.href = "thankyou.html";
+          })
+          .catch(function () {
+            btn.disabled = false;
+            btn.textContent = original;
+            setStatus("Something went wrong. Please try again in a moment.", true);
           });
-        }
-
-        var sends = [];
-        if (sheetOn) sends.push(send(LEAD_ENDPOINT));
-        if (ghlOn)   sends.push(send(GHL_WEBHOOK));
-
-        // no-cors responses are opaque (unreadable), so completion = success. allSettled
-        // means one endpoint failing still lets the lead through to the other + download.
-        Promise.allSettled(sends).then(function () {
-          // Grant short-lived, session-scoped access to the thank-you page. This token
-          // lives only in THIS browser tab/session, so the thank-you URL can't be
-          // shared or opened directly without submitting the form.
-          try {
-            sessionStorage.setItem("cm_access", JSON.stringify({ t: Date.now() }));
-          } catch (err) { /* private mode / storage blocked — page still loads */ }
-          window.location.href = "thankyou.html";
-        });
       });
     })();
 
