@@ -1152,11 +1152,12 @@
     document.getElementById("year").textContent = new Date().getFullYear();
 
     // ── Lead capture → Google Sheet (via Apps Script web app) ──
-    // 1. Create a Google Sheet.
-    // 2. Extensions → Apps Script, paste the doPost() code from SETUP-FORM.md.
-    // 3. Deploy → New deployment → Web app → Execute as "Me", access "Anyone".
-    // 4. Paste the deployment /exec URL below.
+    // The form sends each lead to TWO places (see SETUP-FORM.md):
+    //  1. Google Sheet (backup record) via an Apps Script web app /exec URL.
+    //  2. GoHighLevel via a Workflow "Inbound Webhook" trigger URL.
+    // Either can be left as a placeholder; the form sends to whichever is set.
     var LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbz6mbwujrtG_euGt9NSzaHp-jFTzt0HiWWu_BOqDj3ouucJ_kJ7BRYiHmDa_Qr-8bAP/exec";
+    var GHL_WEBHOOK   = "PASTE_YOUR_GHL_INBOUND_WEBHOOK_URL_HERE";
 
     (function () {
       var form = document.getElementById("leadForm");
@@ -1181,7 +1182,9 @@
           return;
         }
 
-        if (LEAD_ENDPOINT.indexOf("PASTE_YOUR") === 0) {
+        var sheetOn = LEAD_ENDPOINT.indexOf("PASTE_YOUR") !== 0;
+        var ghlOn   = GHL_WEBHOOK.indexOf("PASTE_YOUR") !== 0;
+        if (!sheetOn && !ghlOn) {
           setStatus("Form endpoint not configured yet. (See SETUP-FORM.md)", true);
           return;
         }
@@ -1191,31 +1194,42 @@
         btn.textContent = "Sending…";
         setStatus("");
 
-        var body = new FormData();
-        body.append("name", form.elements["name"].value.trim());
-        body.append("email", form.elements["email"].value.trim());
-        body.append("business", form.elements["business"].value.trim());
-        body.append("source", "content-machine-landing");
-        body.append("submitted_at", new Date().toISOString());
+        var data = {
+          name: form.elements["name"].value.trim(),
+          email: form.elements["email"].value.trim(),
+          business: form.elements["business"].value.trim(),
+          source: "content-machine-landing",
+          submitted_at: new Date().toISOString()
+        };
 
-        // Apps Script web apps don't send CORS headers, so the browser can't read the
-        // response. no-cors fires the request reliably; we treat completion as success
-        // and send the visitor to the thank-you page (with the download button).
-        fetch(LEAD_ENDPOINT, { method: "POST", mode: "no-cors", body: body })
-          .then(function () {
-            // Grant short-lived, session-scoped access to the thank-you page. This
-            // token lives only in THIS browser tab/session, so the thank-you URL
-            // can't be shared or opened directly without submitting the form.
-            try {
-              sessionStorage.setItem("cm_access", JSON.stringify({ t: Date.now() }));
-            } catch (err) { /* private mode / storage blocked — page still loads */ }
-            window.location.href = "thankyou.html";
-          })
-          .catch(function () {
-            btn.disabled = false;
-            btn.textContent = original;
-            setStatus("Something went wrong. Please try again, or email us directly.", true);
+        // Both endpoints accept form-urlencoded fields (Apps Script reads e.parameter;
+        // GHL's inbound webhook maps each key to a field). url-encoded is a "simple"
+        // request, so no-cors works without a CORS preflight.
+        var payload = new URLSearchParams(data).toString();
+        function send(url) {
+          return fetch(url, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+            body: payload
           });
+        }
+
+        var sends = [];
+        if (sheetOn) sends.push(send(LEAD_ENDPOINT));
+        if (ghlOn)   sends.push(send(GHL_WEBHOOK));
+
+        // no-cors responses are opaque (unreadable), so completion = success. allSettled
+        // means one endpoint failing still lets the lead through to the other + download.
+        Promise.allSettled(sends).then(function () {
+          // Grant short-lived, session-scoped access to the thank-you page. This token
+          // lives only in THIS browser tab/session, so the thank-you URL can't be
+          // shared or opened directly without submitting the form.
+          try {
+            sessionStorage.setItem("cm_access", JSON.stringify({ t: Date.now() }));
+          } catch (err) { /* private mode / storage blocked — page still loads */ }
+          window.location.href = "thankyou.html";
+        });
       });
     })();
 

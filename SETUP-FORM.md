@@ -75,7 +75,40 @@ function doPost(e) {
 
 ---
 
-## Exporting to GoHighLevel later
+## Sending leads to GoHighLevel (live, automatic)
+
+The form posts each lead to **two** places: the Google Sheet above (backup) and
+GoHighLevel (for automation). To connect GHL, use a Workflow inbound webhook —
+**not** the GHL Form builder.
+
+### Set up the GHL webhook
+1. In GHL: **Automation → Workflows → + Create Workflow** (start from scratch).
+2. **Add New Trigger → Inbound Webhook**. Copy the generated **Webhook URL**
+   (looks like `https://services.leadconnectorhq.com/hooks/...`).
+3. Add action **Create/Update Contact**, mapping the inbound fields:
+   - `name` → Full Name
+   - `email` → Email
+   - `business` → Company Name (or a custom field)
+   - `source`, `submitted_at` are also available if you want them.
+4. (Optional) Add an **Email** action to auto-deliver the pack/download link.
+5. **Save & Publish.**
+
+> Tip: submit the live form once first so GHL captures a sample payload — then the
+> field names appear in the mapping dropdowns.
+
+### Paste the URL into the site
+In `index.html`, replace the placeholder:
+```js
+var GHL_WEBHOOK = "PASTE_YOUR_GHL_INBOUND_WEBHOOK_URL_HERE";
+```
+with your webhook URL, then save, commit, push. (Tell me the URL and I'll do it.)
+
+Both endpoints are independent — if either is left as a placeholder, the form
+simply skips it and still sends to the other.
+
+---
+
+## Exporting to GoHighLevel later (manual fallback, via the Sheet)
 
 1. In the Sheet: **File → Download → Comma-separated values (.csv)**.
 2. In GHL: **Contacts → Import → Upload CSV**, map columns
