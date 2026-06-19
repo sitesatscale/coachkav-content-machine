@@ -289,10 +289,7 @@
     /* ════ PROBLEM ════ */
     .problem-section { padding: 100px 0; }
     .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
-    @media (max-width: 860px) {
-      .problem-grid { grid-template-columns: 1fr; gap: 48px; }
-      .problem-statement { position: static; top: auto; } /* no sticky on mobile */
-    }
+    @media (max-width: 860px) { .problem-grid { grid-template-columns: 1fr; gap: 48px; } }
     .problem-statement { position: sticky; top: 100px; }
     .problem-statement h2 {
       font-family: var(--headline); font-weight: 800;
@@ -301,6 +298,8 @@
       margin-bottom: 28px; color: var(--white);
     }
     .problem-statement p { font-size: clamp(15px, 1.2vw, 18px); color: var(--muted); line-height: 1.78; max-width: 380px; }
+    /* No sticky on mobile — placed after the base rule so it actually wins */
+    @media (max-width: 860px) { .problem-statement { position: static; top: auto; } }
 
     .pain-list { list-style: none; display: flex; flex-direction: column; }
     .pain-item { display: flex; align-items: flex-start; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--line); }
