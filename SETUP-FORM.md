@@ -1,82 +1,125 @@
-# Lead form setup (secure)
+# Lead form setup — Google Sheet (Plan B for GoHighLevel)
 
-The landing-page form posts to our own serverless function at **`/api/lead`**
-([api/lead.js](api/lead.js)). That function runs on Vercel's server, holds the
-real destination URLs in **environment variables**, filters abuse, then forwards
-each lead to:
+The landing page form saves each submission as a row in a Google Sheet. Later you
+export the sheet to CSV and **bulk-import the contacts into GoHighLevel**.
 
-1. **GoHighLevel** (Workflow → Inbound Webhook) — live automation / contacts
-2. **Google Sheet** (Apps Script web app) — backup record
-
-Because the URLs live in server-side env vars, they are **never exposed** in the
-page source or the GitHub repo. Fields captured: **Name, Email, Business**.
+Fields captured: **Name, Email, Business** (plus source + timestamp).
 
 ---
 
-## 1. Google Sheet endpoint (backup)
+## One-time setup (~5 minutes)
 
-- New Sheet → **Extensions → Apps Script** → paste the `doPost()` below → Save.
-- **Deploy → New deployment → Web app**, *Execute as: Me*, *Who has access: Anyone* → copy the `/exec` URL.
+### 1. Create the Sheet
+- Go to <https://sheets.new>, name it e.g. **Content Machine Leads**.
+- Leave it empty — the script writes the header row automatically.
+
+### 2. Add the Apps Script
+- In the Sheet: **Extensions → Apps Script**.
+- Delete any boilerplate, paste this, and **Save**:
 
 ```javascript
+// Appends form submissions from the Content Machine landing page to this Sheet.
 const SHEET_NAME = 'Leads';
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
+  lock.waitLock(20000); // avoid two submissions writing the same row
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
-    if (sheet.getLastRow() === 0) sheet.appendRow(['Submitted At', 'Name', 'Email', 'Business', 'Source']);
+    let sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+
+    // Write header row once.
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['Submitted At', 'Name', 'Email', 'Business', 'Source']);
+    }
+
     const p = (e && e.parameter) ? e.parameter : {};
-    sheet.appendRow([p.submitted_at || new Date().toISOString(), p.name || '', p.email || '', p.business || '', p.source || '']);
-    return ContentService.createTextOutput(JSON.stringify({ ok: true })).setMimeType(ContentService.MimeType.JSON);
-  } finally { lock.releaseLock(); }
+    sheet.appendRow([
+      p.submitted_at || new Date().toISOString(),
+      p.name || '',
+      p.email || '',
+      p.business || '',
+      p.source || ''
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
 }
 ```
 
-## 2. GoHighLevel endpoint (live)
+### 3. Deploy as a Web App
+- Top right: **Deploy → New deployment**.
+- Click the gear ⚙ → **Web app**.
+- **Execute as:** `Me`
+- **Who has access:** `Anyone`  ← required so the public form can post
+- **Deploy** → authorize when prompted (approve your own account).
+- Copy the **Web app URL** (ends in `/exec`).
 
-1. **Automation → Workflows → Create Workflow** (blank).
-2. **Add Trigger → Inbound Webhook** → copy the URL.
-3. Action **Create/Update Contact**, map `name`/`email`/`business`.
-4. **Save & Publish.**
+### 4. Paste the URL into the site
+- Open `index.html`, find:
+  ```js
+  var LEAD_ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+  ```
+- Replace the placeholder with your `/exec` URL, save, commit, push.
 
-> The Inbound Webhook is a **premium trigger (billed per execution)** — which is
-> exactly why the `/api/lead` proxy filters bots/spam before forwarding.
-
-## 3. Add the env vars in Vercel
-
-Vercel → your project → **Settings → Environment Variables**. Add:
-
-| Name | Value | Required |
-| --- | --- | --- |
-| `GHL_WEBHOOK_URL` | your GHL inbound webhook URL | yes |
-| `SHEET_WEBAPP_URL` | your Apps Script `/exec` URL | optional (backup) |
-| `ALLOWED_ORIGINS` | e.g. `https://coachkav-content-machine.vercel.app` | recommended |
-| `TURNSTILE_SECRET` | Cloudflare Turnstile secret key | optional (CAPTCHA) |
-
-Apply to **Production** (and Preview if you test there), then **redeploy** so the
-function picks them up.
-
-## 4. (Optional) Turnstile CAPTCHA
-
-The function already verifies a Turnstile token when `TURNSTILE_SECRET` is set.
-To turn it on, also add the widget to the form in `index.html` and set up free
-keys at <https://dash.cloudflare.com/?to=/:account/turnstile>. Ask and I'll wire
-the widget in.
+> Tell me the URL and I'll paste it in and push for you.
 
 ---
 
-## Security notes
+## Sending leads to GoHighLevel (live, automatic)
 
-- Real endpoint URLs are server-side only (env vars) — not in page source or repo.
-- `/api/lead` enforces: **origin check**, **honeypot**, **rate limit**, **field
-  validation**, and **Turnstile** (when configured) before forwarding.
-- ⚠️ The old GHL webhook + Apps Script URLs were previously committed to the public
-  repo. **Regenerate them** (recreate the GHL trigger; redeploy Apps Script as a new
-  deployment) so the exposed URLs are dead, then put the fresh URLs in the env vars.
+The form posts each lead to **two** places: the Google Sheet above (backup) and
+GoHighLevel (for automation). To connect GHL, use a Workflow inbound webhook —
+**not** the GHL Form builder.
+
+### Set up the GHL webhook
+1. In GHL: **Automation → Workflows → + Create Workflow** (start from scratch).
+2. **Add New Trigger → Inbound Webhook**. Copy the generated **Webhook URL**
+   (looks like `https://services.leadconnectorhq.com/hooks/...`).
+3. Add action **Create/Update Contact**, mapping the inbound fields:
+   - `name` → Full Name
+   - `email` → Email
+   - `business` → Company Name (or a custom field)
+   - `source`, `submitted_at` are also available if you want them.
+4. (Optional) Add an **Email** action to auto-deliver the pack/download link.
+5. **Save & Publish.**
+
+> Tip: submit the live form once first so GHL captures a sample payload — then the
+> field names appear in the mapping dropdowns.
+
+### Paste the URL into the site
+In `index.html`, replace the placeholder:
+```js
+var GHL_WEBHOOK = "PASTE_YOUR_GHL_INBOUND_WEBHOOK_URL_HERE";
+```
+with your webhook URL, then save, commit, push. (Tell me the URL and I'll do it.)
+
+Both endpoints are independent — if either is left as a placeholder, the form
+simply skips it and still sends to the other.
+
+---
 
 ## Exporting to GoHighLevel later (manual fallback, via the Sheet)
 
-1. Sheet → **File → Download → CSV**.
-2. GHL → **Contacts → Import** → map Name / Email / Business.
+1. In the Sheet: **File → Download → Comma-separated values (.csv)**.
+2. In GHL: **Contacts → Import → Upload CSV**, map columns
+   (Name → First/Full Name, Email → Email, Business → Company Name).
+3. Add them to a workflow/campaign to deliver the pack.
+
+---
+
+## Notes
+- A hidden honeypot field blocks most spam bots automatically.
+- The browser can't read the Apps Script response (no CORS headers), so the page
+  shows success once the request is sent. Watch the Sheet to confirm rows land.
+- If you redeploy the script, **Manage deployments → edit the existing one** so the
+  URL stays the same (a brand-new deployment gives a new URL you'd have to re-paste).
