@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You're in — Content Machine Pack | Coach Kav</title>
+  <meta name="description" content="Your Content Machine Pack is ready. Download it now." />
+  <meta name="robots" content="noindex" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    @font-face {
+      font-family: "Futura Condensed Extra Bold";
+      src: url("fonts/futura-condensed-extra-bold.ttf") format("truetype");
+      font-weight: 800; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: "Futura Lt Condensed Bold";
+      src: url("fonts/futura-lt-condensed-bold.ttf") format("truetype");
+      font-weight: 700; font-style: normal; font-display: swap;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:    #090909;
+      --white:    #ffffff;
+      --muted:    rgba(255,255,255,0.62);
+      --faint:    rgba(255,255,255,0.40);
+      --line:     rgba(255,255,255,0.12);
+      --surface:  rgba(255,255,255,0.03);
+      --hover:    #e6e6e6;
+      --headline: "Futura Condensed Extra Bold", "Arial Narrow", Impact, sans-serif;
+      --button:   "Futura Lt Condensed Bold", "Arial Narrow", Impact, sans-serif;
+      --display:  "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+      --body:     "Inter", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100dvh;
+      background-color: var(--black);
+      color: var(--white);
+      font-family: var(--body);
+      font-size: 16px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      background-image: radial-gradient(circle, rgba(13,13,13,1) 0%, rgba(0,0,0,1) 100%);
+      background-repeat: no-repeat; background-attachment: fixed;
+      display: flex; flex-direction: column;
+    }
+
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; opacity: 0.08;
+      background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+      background-repeat: repeat;
+    }
+    body::after {
+      content: ""; position: fixed; inset: 0; z-index: 0;
+      pointer-events: none;
+      background-image: url("assets/coach-grid.svg");
+      background-position: center; background-repeat: no-repeat; background-size: cover;
+      -webkit-mask-image: radial-gradient(circle, #000 0%, #000 25%, transparent 75%);
+      mask-image: radial-gradient(circle, #000 0%, #000 25%, transparent 75%);
+    }
+    body > * { position: relative; z-index: 1; }
+
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 40px; width: 100%; }
+
+    nav { padding: 26px 0; border-bottom: 1px solid var(--line); }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo img { height: 30px; display: block; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-family: var(--button); font-weight: 700; font-size: 1.05rem;
+      text-transform: uppercase; text-decoration: none;
+      border: 1px solid var(--white); border-radius: 0; cursor: pointer;
+      padding: 16px 40px; line-height: 1; white-space: nowrap;
+      transition: background-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
+    }
+    .btn--primary { background: var(--white); color: var(--black); }
+    .btn--primary:hover, .btn--primary:focus-visible { background: var(--hover); color: var(--black); }
+    .btn--outline { background: transparent; color: var(--white); }
+    .btn--outline:hover, .btn--outline:focus-visible { background: var(--white); color: var(--black); }
+    .btn:active { transform: scale(0.98); }
+    .btn:focus-visible { outline: 3px solid var(--white); outline-offset: 4px; }
+    .nav .btn { padding: 11px 26px; font-size: 0.95rem; }
+
+    main { flex: 1 0 auto; display: flex; align-items: center; }
+    .ty { text-align: center; padding: 100px 0 110px; max-width: 720px; margin: 0 auto; }
+
+    .ty-eyebrow {
+      display: inline-block; font-family: var(--display); font-weight: 700;
+      font-size: 13px; letter-spacing: 0.34em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 22px;
+    }
+    .ty h1 {
+      font-family: var(--headline); font-weight: 800;
+      font-size: clamp(40px, 6vw, 76px); letter-spacing: -0.02em;
+      text-transform: uppercase; line-height: 0.92; margin-bottom: 22px;
+    }
+    .ty p { color: var(--muted); font-size: clamp(16px, 1.6vw, 19px); margin-bottom: 38px; }
+    .ty p strong { color: var(--white); font-weight: 600; }
+
+    .ty-actions { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .ty-actions .btn { padding: 18px 48px; font-size: 1.15rem; }
+    .ty-hint { font-size: 13px; color: var(--faint); letter-spacing: 0.05em; }
+    .ty-back { color: var(--muted); text-decoration: none; font-size: 14px; border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: color 0.2s ease, border-color 0.2s ease; }
+    .ty-back:hover { color: var(--white); border-color: var(--white); }
+
+    footer { padding: 30px 0; border-top: 1px solid var(--line); }
+    .foot-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--faint); }
+
+    @media (max-width: 600px) {
+      .container { padding: 0 24px; }
+      .ty { padding: 70px 0 80px; }
+      .ty-actions .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <div class="nav-inner">
+        <a href="https://www.coachkav.com/" class="nav-logo" aria-label="Coach Kav home">
+          <img src="assets/coach-kav-signature.svg" alt="Coach Kav" />
+        </a>
+        <a href="/" class="btn btn--outline">Back to Home</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <div class="ty">
+        <span class="ty-eyebrow">You're In</span>
+        <h1>Your machine<br>is ready.</h1>
+        <p>Thanks for grabbing the <strong>Content Machine Pack</strong>. Hit the button below to download it &mdash; nine deliverables, one session, your brand voice locked in.</p>
+        <div class="ty-actions">
+          <a href="assets/content-machine-pack.zip" class="btn btn--primary" download>Download the Pack</a>
+          <span class="ty-hint">Download didn't start? <a href="assets/content-machine-pack.zip" class="ty-back" download>Click here</a>.</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="foot-inner">
+        <span>&copy; <span id="year"></span> Sites at Scale. All rights reserved.</span>
+        <a href="/" class="ty-back">Return to the landing page</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

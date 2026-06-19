@@ -484,14 +484,6 @@
     .lead-form .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
     .lead-status { font-size: 13px; line-height: 1.5; min-height: 1px; }
     .lead-status.is-error { color: #ff8a8a; }
-    .lead-success {
-      padding: 40px 20px; text-align: center; border: 1px solid var(--line); background: var(--surface);
-    }
-    .lead-success h4 {
-      font-family: var(--headline); font-weight: 800; font-size: clamp(22px, 2.2vw, 28px);
-      letter-spacing: -0.01em; text-transform: uppercase; color: var(--white); margin-bottom: 10px; line-height: 1;
-    }
-    .lead-success p { color: var(--muted); font-size: 15px; }
     .lead-hidden { display: none; }
     .cta-fine { display: flex; align-items: center; gap: 12px; margin-top: 16px; font-size: 13px; color: var(--faint); letter-spacing: 0.05em; }
     .cta-fine-sep { opacity: 0.4; }
@@ -1057,11 +1049,6 @@
             <div class="lead-status" id="leadStatus" role="status" aria-live="polite"></div>
           </form>
 
-          <div class="lead-success lead-hidden" id="leadSuccess">
-            <h4>You're in.</h4>
-            <p>Check your inbox &mdash; the Content Machine Pack is on its way.</p>
-          </div>
-
           <div class="cta-fine">
             No spam <span class="cta-fine-sep">&middot;</span> No fluff <span class="cta-fine-sep">&middot;</span> Unsubscribe anytime
           </div>
@@ -1165,7 +1152,6 @@
       if (!form) return;
       var btn = document.getElementById("leadSubmit");
       var statusEl = document.getElementById("leadStatus");
-      var successEl = document.getElementById("leadSuccess");
 
       function setStatus(msg, isError) {
         statusEl.textContent = msg || "";
@@ -1202,11 +1188,11 @@
         body.append("submitted_at", new Date().toISOString());
 
         // Apps Script web apps don't send CORS headers, so the browser can't read the
-        // response. no-cors fires the request reliably; we treat completion as success.
+        // response. no-cors fires the request reliably; we treat completion as success
+        // and send the visitor to the thank-you page (with the download button).
         fetch(LEAD_ENDPOINT, { method: "POST", mode: "no-cors", body: body })
           .then(function () {
-            form.classList.add("lead-hidden");
-            successEl.classList.remove("lead-hidden");
+            window.location.href = "thankyou.html";
           })
           .catch(function () {
             btn.disabled = false;
