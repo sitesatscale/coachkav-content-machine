@@ -289,7 +289,10 @@
     /* ════ PROBLEM ════ */
     .problem-section { padding: 100px 0; }
     .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
-    @media (max-width: 860px) { .problem-grid { grid-template-columns: 1fr; gap: 48px; } }
+    @media (max-width: 860px) {
+      .problem-grid { grid-template-columns: 1fr; gap: 48px; }
+      .problem-statement { position: static; top: auto; } /* no sticky on mobile */
+    }
     .problem-statement { position: sticky; top: 100px; }
     .problem-statement h2 {
       font-family: var(--headline); font-weight: 800;
