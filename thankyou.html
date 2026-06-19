@@ -7,6 +7,21 @@
   <meta name="description" content="Your Content Machine Pack is ready. Download it now." />
   <meta name="robots" content="noindex" />
 
+  <!-- Access gate: this page is only reachable right after a form submission.
+       The form sets a short-lived token in sessionStorage; without a valid,
+       recent token we bounce back to the sign-up form. Runs before render so
+       gated content never flashes. -->
+  <script>
+    (function () {
+      try {
+        var raw = sessionStorage.getItem("cm_access");
+        var grant = raw ? JSON.parse(raw) : null;
+        var valid = grant && grant.t && (Date.now() - grant.t) < 1800000; // 30 min
+        if (!valid) { window.location.replace("/#get-it"); }
+      } catch (e) { window.location.replace("/#get-it"); }
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />

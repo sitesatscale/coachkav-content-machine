@@ -1192,6 +1192,12 @@
         // and send the visitor to the thank-you page (with the download button).
         fetch(LEAD_ENDPOINT, { method: "POST", mode: "no-cors", body: body })
           .then(function () {
+            // Grant short-lived, session-scoped access to the thank-you page. This
+            // token lives only in THIS browser tab/session, so the thank-you URL
+            // can't be shared or opened directly without submitting the form.
+            try {
+              sessionStorage.setItem("cm_access", JSON.stringify({ t: Date.now() }));
+            } catch (err) { /* private mode / storage blocked — page still loads */ }
             window.location.href = "thankyou.html";
           })
           .catch(function () {
